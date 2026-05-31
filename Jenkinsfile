@@ -1,13 +1,11 @@
 pipeline {
     agent any
 
-    stages {
+    environment {
+        KUBECONFIG = '/var/lib/jenkins/.kube/config'
+    }
 
-        stage('Checkout') {
-            steps {
-                echo 'Code already checked out from GitHub'
-            }
-        }
+    stages {
 
         stage('Build Docker Image') {
             steps {
@@ -15,9 +13,24 @@ pipeline {
             }
         }
 
-        stage('Verify Docker Image') {
+        stage('Load Image To Minikube') {
             steps {
-                sh 'docker images | grep cloudreal-app'
+                sh 'minikube image load cloudreal-app:v1'
+            }
+        }
+
+        stage('Deploy To Kubernetes') {
+            steps {
+                sh 'kubectl apply -f k8s/deployment.yaml'
+                sh 'kubectl apply -f k8s/service.yaml'
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh 'kubectl get deployments'
+                sh 'kubectl get pods'
+                sh 'kubectl get svc'
             }
         }
     }
