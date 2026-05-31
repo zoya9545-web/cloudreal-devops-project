@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: cloudreal-app
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: cloudreal-app
+
+  template:
+    metadata:
+      labels:
+        app: cloudreal-app
+
+    spec:
+      containers:
+      - name: cloudreal-app
+        image: cloudreal-app:v1
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3002
