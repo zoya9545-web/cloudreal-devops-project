@@ -2,20 +2,33 @@ pipeline {
     agent any
 
     environment {
-        KUBECONFIG = '/var/lib/jenkins/.kube/config'
+        IMAGE_NAME = "zoya9545/cloudreal-app"
+        KUBECONFIG = "/var/lib/jenkins/.kube/config"
     }
 
     stages {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t cloudreal-app:v1 .'
+                sh 'docker build -t $IMAGE_NAME:latest .'
             }
         }
 
-        stage('Load Image To Minikube') {
+        stage('Docker Login') {
             steps {
-                sh 'minikube image load cloudreal-app:v1'
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                sh 'docker push $IMAGE_NAME:latest'
             }
         }
 
@@ -23,6 +36,7 @@ pipeline {
             steps {
                 sh 'kubectl apply -f k8s/deployment.yaml'
                 sh 'kubectl apply -f k8s/service.yaml'
+                sh "kubectl rollout restart deployment/cloudreal-app"
             }
         }
 
